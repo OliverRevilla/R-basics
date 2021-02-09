@@ -84,14 +84,79 @@ mean(hands[,1]%in%aces & hands[,2]%in%facecard)
 hand <- sample(deck, 2)
 hand
 
+# Monty Hall Problem
+
+B <- 10000 # number of replicates
+monty_hall <- function(strategy){
+  doors <- as.character(1:3) # doors the i could choose
+  prize <- sample(c("car","goat","goat"))
+  prize_door <- doors[prize == "car"] # the prize door
+  my_pick <- sample(doors,1) # my first pick
+  show <- sample(doors[!doors %in% c(my_pick, prize_door)],1)# the door will show us
+  stick <-my_pick
+  stick == prize_door
+  switch <- doors[!doors%in%c(my_pick, show)] # if we decide to change it
+  choice <- ifelse(strategy == "stick", stick, switch)
+  choice == prize_door
+  }
+
+stick <- replicate (B, monty_hall("stick"))
+mean(stick)
+
+stick <- replicate (B, monty_hall("switch"))
+mean(stick)
+
+#Birthday problem
+
+n <- 50
+bdays <- sample(1:365,n,replace = TRUE)
+bdays
+
+table(duplicated(bdays))
+
+B <- 10000
+same_birthday <- function(n){
+  bdays <- sample(1:365,n,replace = TRUE)
+  any(duplicated(bdays))
+}
+
+same_birthday(50)
+
+  results <- replicate(B, same_birthday(25))
+  mean(results)
+
+compute_prob <- function(n, B= 10000){
+  results <- replicate(B, same_birthday(n))
+  mean(results)
+}
+
+# sapply function
+
+n <- seq(1,60)
+prob <- sapply(n,compute_prob)
+
+library(tidyverse)
+prob <- sapply(n, compute_prob)
+qplot(n, prob)
 
 
+#using the multiplication rule
+exact_prob <- function(n){
+  prob_unique <- seq(365,365-n+1)/365
+  1 - prod(prob_unique)
+  }
 
+eprob <- sapply(n, exact_prob)
+qplot(n,prob) + geom_line(aes(n,eprob), col = "red")
 
+#Infinity in practice
+B <- 10^seq(1,5,len = 100)
+compute_prob <- function(B, n=25){
+  same_day <- replicate(B, same_birthday(n))
+  mean(same_day)
+}
 
+prob <- sapply(B,compute_prob)
 
-
-
-
-
+qplot(log10(B),prob, geom = "line")
 
