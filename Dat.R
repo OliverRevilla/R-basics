@@ -160,3 +160,63 @@ prob <- sapply(B,compute_prob)
 
 qplot(log10(B),prob, geom = "line")
 
+#Continuous probability
+
+library(tidyverse)
+library(dslabs)
+data(heights)
+x <- heights %>% filter(sex == "Male") %>% pull(height)
+x
+
+# we defined the empirical distribution function
+
+F <- function(a){
+  mean(x <= a)
+} # x belongs to data
+
+
+1 - F(70) # Probability that one men were taller that 70 inches.
+
+#Theoretical continuous distributions.
+#function pnorm(): give us the CDF of normal distribution.
+
+F(a) = pnorm(a,m,s)
+#m : mean()
+#s : sd()
+
+m <- mean(x)
+s <- sd(x)
+1 - pnorm(70.5,m,s)
+
+#Monte Carlo simulations for continuous variables
+library(ggplot2)
+library(ggrepel)
+n <- length(x)
+m <- mean(x)
+s <- sd(x)
+simulated_heights <- rnorm(n,m,s)
+
+#ploting the normmal distribution
+
+x <- seq(-4,4, length = 100)
+data.frame(x,f = dnorm(x)) %>%
+  ggplot(aes(x,f))+
+  geom_line()
+
+
+#function: rnorm() produces random numbers 
+
+B <- 10000
+tallest <- replicate(B, {
+  simulated_data <- rnorm(800,m,s)
+  max(simulated_data)
+})
+
+tallest
+mean(tallest >= 7*12)
+
+
+
+
+
+
