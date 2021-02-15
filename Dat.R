@@ -10,6 +10,7 @@
 #Function: expand.grid(): gives us all the permutations of entries of two vectors.
 #Function: permutation(): to get the permutation. First we should
 # code library(gtools)
+# qnorm(): give us the normalization 
 beads <- rep(c("red","blue"), times = c(2,3))
 beads
 
@@ -214,6 +215,60 @@ tallest <- replicate(B, {
 
 tallest
 mean(tallest >= 7*12)
+
+### Case Study: The Big short
+
+# Interest rates explained with chance model
+n <- 1000 #number of loans
+loss_per_foreclosure <- -200000 # loss per foreclosure
+p <- 0.02 # probability of default
+defaults <- sample(c(0,1),n,prob = c(1-p,p), replace = TRUE)# number of defaults
+sum(defaults * loss_per_foreclosure)
+
+# sum of defaults is a random varibale, we can construct a Montecarlo 
+#Simulation to get an idea of the distribution of this random variable.
+
+B <- 10000
+library(gtools)
+losses <- replicate(B, {
+  defaults <- sample(c(0,1),n,prob = c(1-p,p), replace = TRUE)
+  sum(defaults * loss_per_foreclosure)
+})
+
+qplot(losses)
+
+# we add th variable x that represent the number of draws
+
+l <- loss_per_foreclosure
+z <- qnorm(0.01)
+x <- -l*(n*p - z*sqrt(n*p*(1-p)))/(n*(1-p)+z*sqrt(n*p*(1-p)))
+x
+
+n*(l*p + x*(1-p))
+
+#Montecarlo Simulation
+B <- 100000
+profit <- replicate(B, {
+  draws <- sample(c(x, loss_per_foreclosure),n,
+                  prob = c(1-p,p), replace = TRUE)
+  sum(draws)
+  
+})
+mean(profit) # expected profit
+mean(profit < 0 ) # probability of fail
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
