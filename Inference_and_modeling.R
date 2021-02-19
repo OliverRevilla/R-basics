@@ -183,7 +183,51 @@ p <- 0.5
 se <- sqrt(p*(1-p)/N)
 plot(N,se)
 
-#9.- 
+#11.- 
+# Define `p` as the proportion of Democrats in the population being polled
+p <- 0.45
+
+# Define `N` as the number of people polled
+N <- 100
+
+# The variable `B` specifies the number of times we want the sample to be replicated
+B <- 10000
+
+# Use the `set.seed` function to make sure your answer matches the expected result after random sampling
+set.seed(1)
+
+# Generate `errors` by subtracting the estimate from the actual proportion of Democratic voters
+errors <- replicate(B, p - take_sample(p, N))
+
+# Generate a qq-plot of `errors` with a qq-line showing a normal distribution
+qqnorm(errors)
+qqline(errors)
+
+#12.-
+# Define `p` as the proportion of Democrats in the population being polled
+p <- 0.45
+
+# Define `N` as the number of people polled
+N <- 100
+
+# Calculate the probability that the estimated proportion of Democrats in the population is greater than 0.5. Print this value to the console.
+pnorm(0.5, mean = p, sd = sqrt(((1-p)*p)/N), lower.tail = FALSE)
+
+#13.-
+# Define `N` as the number of people polled
+N <-100
+
+# Define `X_hat` as the sample average
+X_hat <- 0.51
+
+# Define `se_hat` as the standard error of the sample average
+se_hat <- sqrt(X_hat*(1-X_hat)/N)
+
+# Calculate the probability that the error is 0.01 or larger
+1-(pnorm(0.01/se_hat) - pnorm(-0.01/se_hat))
+
+
+
 
 
 
