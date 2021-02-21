@@ -226,7 +226,51 @@ se_hat <- sqrt(X_hat*(1-X_hat)/N)
 # Calculate the probability that the error is 0.01 or larger
 1-(pnorm(0.01/se_hat) - pnorm(-0.01/se_hat))
 
+#########################################################
 
+############## CONFIDENCE INTERVALS ###################
+library(dslabs)
+library(ggplot2)
+library(tidyverse)
+
+data("nhtemp")
+data.frame(year = as.numeric(time(nhtemp)), temperature = as.numeric(nhtemp)) %>%
+  ggplot(aes(year, temperature)) +
+  geom_point() +
+  geom_smooth() +
+  ggtitle("Average Yearly Tmperatures in New Haven")
+
+  
+#We want to know the probability that the interval [¯X − 2 ˆ SE(¯X ), ¯X − 2 ˆ SE(¯X )] contains
+#the true proportion p.
+ 
+p <- 0.45
+N <- 1000
+
+#Interval
+x <- sample(c(0,1), size = N, replace = TRUE, prob = c(1-p,p))
+x_hat <- mean(x)
+se_hat <- sqrt(x_hat * (1- x_hat)/N)
+c(x_hat - 1.96 *se_hat,x_hat + 1.96 *se_hat )
+ 
+# P(−1.96 ≤ Z ≤ 1.96)
+
+pnorm(1.96) - pnorm(-1.96)
+
+# Ir we want to have a larger probability, maybe 99.5%
+
+qnorm(0.995)
+
+B <- 10000
+
+inside <- replicate (B, {
+  x <- sample(c(0,1),size = N, replace = TRUE, prob = c(1-p,p))
+  x_hat <- mean(x)
+  se_hat <- sqrt(x_hat * (1- x_hat)/N)
+  between(p, x_hat - 1.96* se_hat,x_hat + 1.96* se_hat)
+  })
+
+mean(inside)
 
 
 
