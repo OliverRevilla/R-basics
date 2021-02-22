@@ -272,8 +272,107 @@ inside <- replicate (B, {
 
 mean(inside)
 
+# Exercises
+
+#Assume there are only two candidates and construct 
+#a 95% confidence interval for the election night proportion .
+
+# Load the data
+data(polls_us_election_2016)
+
+# Generate an object `polls` that contains data filtered for polls that ended on or after October 31, 2016 in the United States
+polls <- polls_us_election_2016 %>% filter(state == "U.S." & enddate >="2016-10-31")
+
+# How many rows does `polls` contain? Print this value to the console.
+nrow(polls)
+
+# Assign the sample size of the first poll in `polls` to a variable called `N`. Print this value to the console.
+N <- polls[1,"samplesize"]
+print(N)
+
+# For the first poll in `polls`, assign the estimated percentage of Clinton voters to a variable called `X_hat`. Print this value to the console.
+X_hat <- as.numeric(polls[1,] %>% select(rawpoll_clinton))/100
+print(X_hat)
+# Calculate the standard error of `X_hat` and save it to a variable called `se_hat`. Print this value to the console.
+se_hat <- sqrt(X_hat*(1-X_hat)/N)
+print(se_hat)
+# Use `qnorm` to calculate the 95% confidence interval for the proportion of Clinton voters. Save the lower and then the upper confidence interval to a variable called `ci`.
+ci <- c(X_hat - qnorm(0.975) *se_hat, X_hat + qnorm(0.975) *se_hat)
+
+#Create a new object called pollster_results that contains 
+#the pollster's name, the end date of the poll, the 
+#proportion of voters who declared a vote for Clinton, 
+#the standard error of this estimate, and the lower and 
+#upper bounds of the confidence interval for the estimate
+
+pollster_results <- polls %>% 
+  mutate(X_hat = rawpoll_clinton/100,
+  se_hat =sqrt(X_hat*(1- X_hat)/samplesize), 
+  lower = X_hat - qnorm(0.975)*se_hat, 
+  upper = X_hat + qnorm(0.975)*se_hat)
+
+view(pollster_results)                                    
+
+pollster_results <- pollster_results %>% mutate(hit = 0.482 >= lower & 0.482 <= upper)                              
+                                     
+avg_hit <- pollster_results %>% 
+  mutate(hit = lower<=0.482 & upper>=0.482) %>% 
+  summarize(mean(hit))
 
 
+#
+# Add a statement to this line of code that will add a new column named `d_hat` to `polls`. The new column should contain the difference in the proportion of voters.
+polls <- polls_us_election_2016 %>% filter(enddate >= "2016-10-31" & state == "U.S.") %>% mutate(d_hat = rawpoll_clinton - rawpoll_trump)
 
 
+# Assign the sample size of the first poll in `polls` to a variable called `N`. Print this value to the console.
+N <- polls[1,"samplesize"]
+print(N)
 
+# Assign the difference `d_hat` of the first poll in `polls` to a variable called `d_hat`. Print this value to the console.
+d_hat <- polls[1,"d_hat"]/100
+print(d_hat)
+
+# Assign proportion of votes for Clinton to the variable `X_hat`.
+X_hat <- ((d_hat+1)/2)
+
+# Calculate the standard error of the spread and save it to a variable called `se_hat`. Print this value to the console.
+se_hat <- 2*sqrt((X_hat*(1-X_hat))/N)
+
+
+# Use `qnorm` to calculate the 95% confidence interval for the difference in the proportions of voters. Save the lower and then the upper confidence interval to a variable called `ci`.
+ci <- c((2*X_hat-1) - qnorm(0.975) *se_hat, (2*X_hat-1) + qnorm(0.975) * se_hat)
+
+
+#
+
+pollster_results <- polls %>% 
+  mutate(X_hat = ((d_hat/100)+1)/2,
+         se_hat =2*sqrt((X_hat*(1-X_hat))/samplesize), 
+         lower = 2*X_hat-1 - qnorm(0.975)*se_hat, 
+         upper = 2*X_hat-1 + qnorm(0.975)*se_hat) %>%
+  select(pollster, enddate,d_hat, X_hat,se_hat,lower, upper)
+
+
+pollster_results <-  polls %>% 
+  mutate(X_hat = (d_hat+1)/2, 
+         se_hat = 2*sqrt(X_hat*(1-X_hat)/samplesize), 
+         lower = d_hat - qnorm(0.975)*se_hat,
+         upper = d_hat + qnorm(0.975)*se_hat) %>% 
+  select(pollster, enddate, d_hat, lower, upper)
+
+#
+#calculate the difference between each poll's estimate 
+#and the actual . 
+
+polls %>% mutate(errors = d_hat/100 - 0.021) %>%
+  ggplot(aes(x = d_hat, y = errors)) + geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#
+
+
+polls %>% mutate(errors = d_hat/100 - 0.021) %>%
+  group_by(pollster) %>% filter(pollster >= 5) %>%
+  ggplot(aes(x = d_hat, y = errors)) + geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
