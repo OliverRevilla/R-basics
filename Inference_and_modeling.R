@@ -232,7 +232,7 @@ se_hat <- sqrt(X_hat*(1-X_hat)/N)
 library(dslabs)
 library(ggplot2)
 library(tidyverse)
-
+#function: t.test(): mean and difference of mean
 data("nhtemp")
 data.frame(year = as.numeric(time(nhtemp)), temperature = as.numeric(nhtemp)) %>%
   ggplot(aes(year, temperature)) +
@@ -376,3 +376,150 @@ polls %>% mutate(errors = d_hat/100 - 0.021) %>%
   group_by(pollster) %>% filter(pollster >= 5) %>%
   ggplot(aes(x = d_hat, y = errors)) + geom_point() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+### Poll aggregators
+
+library(tidyverse)
+library(dslabs)
+
+d <- 0.039
+Ns <- c(1298,533,1342,897,774,254,812,324,1291,1056,2172,516)
+p <- (d+1)/2
+
+confidence_intervals <- sapply(Ns, function(N){
+  x <-sample(c(0,1), size = N, replace = TRUE,prob = c(1-p,p))
+  x_hat <- mean(x)
+  se_hat <- sqrt(x_hat*(1-x_hat)/N)
+  2*c(x_hat, x_hat - 2*se_hat,x_hat + 2*se_hat) - 1
+})
+
+
+# dataframe
+polls <- data.frame(poll = 1:ncol(confidence_intervals),
+                    t(confidence_intervals),
+                    sample_size = Ns)
+names(polls) <- c('poll','estimate','low','high','sample_size')
+
+sum(polls$sample_size)
+
+d_hat <- polls %>% summarise(avg = sum(estimate*sample_size)/sum(sample_size)) %>%
+         pull(avg)
+
+#estimation for proportion
+p_hat <- (1 + d_hat)/2
+moe <- 2*1.96*sqrt(p_hat*(1-p_hat)/sum(polls$sample_size))
+moe
+
+#16.1.1. Poll data
+
+data("polls_us_election_2016")
+polls <- polls_us_election_2016 %>%
+  filter(state == "U.S." & enddate >= '2016-10-31' &
+           (grade %in% c("A+","A","A-","B+")|is.na(grade)))
+polls <- polls %>%
+  mutate(spread = rawpoll_clinton/100 - rawpoll_trump/100)
+
+d_hat <- polls %>%
+  summarize(d_hat = sum(spread*samplesize)/sum(samplesize)) %>%
+  pull(d_hat)
+
+p_hat <- (d_hat + 1)/2
+noe <- 1.96*2*sqrt(p_hat*(1-p_hat)/sum(polls$samplesize))
+noe
+
+polls %>%
+  ggplot(aes(spread)) +
+  geom_histogram(color = "black", binwidth = 0.01)
+
+
+# Code: Investigating poll data and pollster bias
+# number of polls per pollster in week before election
+polls %>% group_by(pollster) %>% summarize(n())
+
+# plot results by pollsters with at least 6 polls
+polls %>% group_by(pollster) %>%
+  filter(n() >= 6) %>%
+  ggplot(aes(pollster, spread)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+# standard errors within each pollster
+polls %>% group_by(pollster) %>%
+  filter(n() >= 6) %>%
+  summarize(se = 2 * sqrt(p_hat * (1-p_hat) / median(samplesize)))
+
+#Data Driven Models
+# collect last result before the election for each pollster
+one_poll_per_pollster <- polls %>% group_by(pollster) %>%
+  filter(enddate == max(enddate)) %>%      # keep latest poll
+  ungroup()
+
+# histogram of spread estimates
+one_poll_per_pollster %>%
+  ggplot(aes(spread)) + geom_histogram(binwidth = 0.01)
+
+# construct 95% confidence interval
+results <- one_poll_per_pollster %>%
+  summarize(avg = mean(spread), se = sd(spread)/sqrt(length(spread))) %>%
+  mutate(start = avg - 1.96*se, end = avg + 1.96*se)
+round(results*100, 1)
+
+##### Exercises ###
+# Load the 'dslabs' package and data contained in 'heights'
+library(dslabs)
+data(heights)
+
+# Make a vector of heights from all males in the population
+x <- heights %>% filter(sex == "Male") %>%
+  .$height
+
+# Calculate the population average. Print this value to the console.
+mean(x)
+
+# Calculate the population standard deviation. Print this value to the console.
+sd(x)
+
+#2.-
+# The vector of all male heights in our population `x` has already been loaded for you. You can examine the first six elements using `head`.
+head(x)
+
+# Use the `set.seed` function to make sure your answer matches the expected result after random sampling
+set.seed(1)
+
+# Define `N` as the number of people measured
+N <- 50
+
+# Define `X` as a random sample from our population `x`
+X <- sample(x,size = N, replace = TRUE)
+
+# Calculate the sample average. Print this value to the console.
+print(mean(X))
+
+# Calculate the sample standard deviation. Print this value to the console.
+print(sd(X))
+
+#3.-
+# The vector of all male heights in our population `x` has already been loaded for you. You can examine the first six elements using `head`.
+head(x)
+
+# Use the `set.seed` function to make sure your answer matches the expected result after random sampling
+set.seed(1)
+
+# Define `N` as the number of people measured
+N <- 50
+
+# Define `X` as a random sample from our population `x`
+X <- sample(x, N, replace = TRUE)
+
+# Define `se` as the standard error of the estimate. Print this value to the console.
+se <- sd(X)/sqrt(N)
+print(se)
+
+
+# Construct a 95% confidence interval for the population average based on our sample. Save the lower and then the upper confidence interval to a variable called `ci`.
+ci <- c(mean(X)-qnorm(0.975)*se, mean(X)+qnorm(0.975)*se)
+
+#4.-
+
+
