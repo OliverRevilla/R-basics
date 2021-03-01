@@ -520,6 +520,91 @@ print(se)
 # Construct a 95% confidence interval for the population average based on our sample. Save the lower and then the upper confidence interval to a variable called `ci`.
 ci <- c(mean(X)-qnorm(0.975)*se, mean(X)+qnorm(0.975)*se)
 
-#4.-
+#5.-
+# Define `mu` as the population average
+mu <- mean(x)
+
+# Use the `set.seed` function to make sure your answer matches the expected result after random sampling
+set.seed(1)
+
+# Define `N` as the number of people measured
+N <- 50
+
+# Define `B` as the number of times to run the model
+B <- 10000
+
+# Define an object `res` that contains a logical vector for simulated intervals that contain mu
 
 
+
+res <- replicate(B,{
+  X <- sample(x, N , replace = TRUE)
+  se <- sd(X)/sqrt(N)
+  interval <- c(mean(X)-qnorm(0.975)*se, mean(X)+qnorm(0.975)*se)
+  between(mu, interval[1],interval[2])
+})
+
+#6.-
+polls <- polls_us_election_2016 %>% 
+  filter(pollster %in% c("Rasmussen Reports/Pulse Opinion Research","The Times-Picayune/Lucid") &
+           enddate >= "2016-10-15" &
+           state == "U.S.") %>% 
+  mutate(spread = rawpoll_clinton/100 - rawpoll_trump/100) 
+
+names(polls)
+
+polls %>% ggplot(aes(pollster, spread)) + geom_boxplot() + geom_point()
+
+#13.-
+# The `polls` data have already been loaded for you. Use the `head` function to examine them.
+head(polls)
+
+# Create an object called `sigma` that contains a column for `pollster` and a column for `s`, the standard deviation of the spread
+sigma <- polls %>% group_by(pollster) %>% summarize(s = sd(spread))
+
+
+# Print the contents of sigma to the console
+print(sigma)
+
+#15.-
+# The `polls` data have already been loaded for you. Use the `head` function to examine them.
+head(polls)
+
+# Create an object called `res` that summarizes the average, standard deviation, and number of polls for the two pollsters.
+res <-polls %>% group_by(pollster) %>% summarise(avg = mean(spread), sd = sd(spread),n())
+
+
+# Store the difference between the larger average and the smaller in a variable called `estimate`. Print this value to the console.
+estimate <- abs(res[1,'avg']-res[2,'avg'])
+print(estimate)
+
+# Store the standard error of the estimates as a variable called `se_hat`. Print this value to the console.
+se_hat <- sqrt((res[1,'sd']^2)/res[1,'n()'] + (res[2,'sd']^2)/res[2,'n()'])
+
+# Calculate the 95% confidence interval of the spreads. Save the lower and then the upper confidence interval to a variable called `ci`.
+ci <- c(estimate - qnorm(0.975)*se_hat,estimate + qnorm(0.975)*se_hat  )
+
+#16.-
+# We made an object `res` to summarize the average, standard deviation, and number of polls for the two pollsters.
+res <- polls %>% group_by(pollster) %>% 
+  summarize(avg = mean(spread), s = sd(spread), N = n()) 
+
+# The variables `estimate` and `se_hat` contain the spread estimates and standard error, respectively.
+estimate <- res$avg[2] - res$avg[1]
+se_hat <- sqrt(res$s[2]^2/res$N[2] + res$s[1]^2/res$N[1])
+
+# Calculate the p-value
+2*(1 - pnorm(estimate/se_hat, 0, 1))
+
+#17.-
+polls <- polls_us_election_2016 %>% 
+  filter(enddate >= "2016-10-15" &
+           state == "U.S.") %>%
+  group_by(pollster) %>%
+  filter(n() >= 5) %>% 
+  mutate(spread = rawpoll_clinton/100 - rawpoll_trump/100) %>%
+  ungroup()
+
+names(polls)
+
+polls$pollster
