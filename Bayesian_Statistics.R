@@ -21,6 +21,75 @@ N_H
 P_N_H <- N_H/N
 P_N_H
 
+#Hierarchical Models
+#Hierarchical models use multiple levels of variability to model results. They are
+#hierarchical because values in the lower levels of the model are computed using values
+#from higher levels of the model
+
+#We model baseball player batting average using a hierarchical model with two levels of variability
+
+#p ~ N(u,r) ---- describes player to player variability in natural ability
+#Y|p ~ N(p, o) --- describes the varability due the luck
+
+#First level _ prior distribution
+#Second level _ sampling distribution
+
+#Exercise 1
+library(dplyr)
+library(dslabs)
+data(polls_us_election_2016)
+
+polls <- polls_us_election_2016%>%filter(state == 'Florida' & enddate >= "2016-11-04") %>%
+  mutate(spread = rawpoll_clinton/100 - rawpoll_trump/100)
+
+head(polls, 200)
+
+
+results <- polls %>% summarise(avg = mean(spread), se = sd(spread/sqrt(11)))
+results
+
+
+#exercises
+mu <- 0
+sigma <- results$se
+Y <- results$avg
+
+#Define a variable 'taus' as different values of tau
+taus <- seq(0.005,0.05,len = 100)
+
+#Create a function called 'p_calc' that generates 'B' 
+#and calculates the probability of the spread being less than 0
+
+p_calc <- function(x){
+  B <- (sigma^2)/(sigma^2 + x^2)
+  posterior_mean <- B*mu +(1-B)*Y
+  posterior_se <- sqrt(1/(1/sigma^2 + 1/taus^2))
+  prob <- pnorm(0,posterior_mean, posterior_se)
+  prob
+}
+
+#Create a vector called 'ps' by applying the function 'p_calc' across
+#value in 'taus'
+
+ps <- p_calc(taus)
+plot(taus, ps)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
