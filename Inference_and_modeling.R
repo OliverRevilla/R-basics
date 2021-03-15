@@ -608,3 +608,6 @@ polls <- polls_us_election_2016 %>%
 names(polls)
 
 polls$pollster
+
+
+
